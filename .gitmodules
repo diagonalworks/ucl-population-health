@@ -1,0 +1,3 @@
+[submodule "deps/diagonal-b6"]
+	path = deps/diagonal-b6
+	url = https://github.com/diagonalworks/diagonal-b6.git

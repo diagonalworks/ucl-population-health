@@ -1,6 +1,7 @@
 all: population cached/nearby-gps.csv
 
-population: world 
+population: world
+	mkdir -p output
 	cd src/diagonal.works/ucl-population-health/cmd/population; go build -o ../../../../../bin/population
 
 world: world/lsoa-2011.index world/codepoint-open-2023-02.index

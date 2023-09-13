@@ -661,8 +661,9 @@ func readLSOAs(w b6.World) (map[LSOACode]*LSOA, error) {
 		return nil, err
 	}
 	for _, lsoa := range lsoas {
-		if f := w.FindFeatureByID(b6.FeatureIDFromUKONSCode(lsoa.Code.String(), 2011, b6.FeatureTypeArea)); f != nil {
-			lsoa.Center = b6.Center(f.(b6.PhysicalFeature))
+		id := b6.FeatureIDFromUKONSCode(lsoa.Code.String(), 2011, b6.FeatureTypeArea)
+		if f := b6.FindAreaByID(id.ToAreaID(), w); f != nil {
+			lsoa.Center = b6.Centroid(f)
 		} else {
 			return nil, fmt.Errorf("No LSOA boundary for %s", lsoa.Code)
 		}
@@ -1883,7 +1884,7 @@ func aggregateByAgeThenCondition(people []Person, maxAge int, conditions []QOFCo
 }
 
 func writePopulationByAge(aggregated [][]int, conditions []QOFCondition) error {
-	f, err := os.OpenFile("population-byage.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := os.OpenFile("output/population-byage.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -2043,7 +2044,7 @@ func writePopulation(world b6.World) error {
 	assignConditions(byPractice, conditions, AllPrevalences, joint, gps)
 
 	log.Printf("write population")
-	f, err := os.OpenFile("population.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := os.OpenFile("output/population.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -2058,7 +2059,7 @@ func writePopulation(world b6.World) error {
 	f.Close()
 
 	log.Printf("write gps")
-	f, err = os.OpenFile("gps.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err = os.OpenFile("output/gps.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -2118,7 +2119,7 @@ func writePopulation(world b6.World) error {
 	if err != nil {
 		return err
 	}
-	f, err = os.OpenFile("population.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err = os.OpenFile("output/population.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
