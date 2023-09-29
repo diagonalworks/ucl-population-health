@@ -1579,12 +1579,12 @@ func (s *Source) Read(options ingest.ReadOptions, emit ingest.Emit, ctx context.
 	}
 
 	boundaries := gdal.Source{
-		Filename:   "/vsizip/data/Integrated_Care_Boards_April_2023_EN_BFC_1659257819249669363.zip/ICB_APR_2023_EN_BFC.shp",
+		Filename:   "/vsizip/data/icb-boundaries.zip",
 		Namespace:  b6.NamespaceUKONSBoundaries,
-		IDField:    "ICB23CD",
-		IDStrategy: gdal.UKONS2023IDStrategy,
+		IDField:    "ICB22CD",
+		IDStrategy: gdal.UKONS2022IDStrategy,
 		Bounds:     s2.FullRect(),
-		CopyTags:   []gdal.CopyTag{{Key: "name", Field: "ICB23NM"}},
+		CopyTags:   []gdal.CopyTag{{Key: "name", Field: "ICB22NM"}},
 		AddTags:    []b6.Tag{{Key: "#boundary", Value: "nhs_icb"}, {Key: "#nhs", Value: "icb"}},
 	}
 	return boundaries.Read(options, emit, ctx)
@@ -1601,12 +1601,18 @@ type Site struct {
 }
 
 func readSites(w b6.World) (map[ODSCode]*Site, error) {
-	f, err := os.Open("data/ets.csv")
+	f, err := os.Open("data/ets.csv.gz")
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	r := csv.NewReader(f)
+
+	g, err := gzip.NewReader(f)
+	if err != nil {
+		return nil, err
+	}
+
+	r := csv.NewReader(g)
 	r.Comment = '#'
 	missingLocations := 0
 	sites := make(map[ODSCode]*Site)
@@ -1638,12 +1644,18 @@ func readSites(w b6.World) (map[ODSCode]*Site, error) {
 }
 
 func readEstates(sites map[ODSCode]*Site) error {
-	f, err := os.Open("data/ERIC - 202122 - Site data.csv")
+	f, err := os.Open("data/eric.csv.gz")
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	r := csv.NewReader(f)
+
+	g, err := gzip.NewReader(f)
+	if err != nil {
+		return err
+	}
+
+	r := csv.NewReader(g)
 	r.Comment = '#'
 	columns := make(map[string]int)
 	row, err := r.Read()
