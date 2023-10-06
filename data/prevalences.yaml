@@ -1,0 +1,339 @@
+# Condition prevalence data, for single conditions and comorbidity pairs,
+# broken down by age and sex. These values were collated by Diagonal from
+# a number of sources, which are listed below, with the respective
+# conditions.
+#
+conditions:
+    diagnosis: dm
+# Derived from the Health Survey for England 2019, Adult health table 2
+byage:
+    f:
+        - ages:
+            begin: 16
+            end: 25
+          p: 0
+        - ages:
+            begin: 25
+            end: 35
+          p: 0.01
+        - ages:
+            begin: 35
+            end: 45
+          p: 0.03
+        - ages:
+            begin: 45
+            end: 55
+          p: 0.04
+        - ages:
+            begin: 55
+            end: 65
+          p: 0.09
+        - ages:
+            begin: 65
+            end: 75
+          p: 0.15
+        - ages:
+            begin: 75
+            end: 0
+          p: 0.06
+    m:
+        - ages:
+            begin: 16
+            end: 25
+          p: 0.01
+        - ages:
+            begin: 25
+            end: 35
+          p: 0.01
+        - ages:
+            begin: 35
+            end: 45
+          p: 0.03
+        - ages:
+            begin: 45
+            end: 55
+          p: 0.09
+        - ages:
+            begin: 55
+            end: 65
+          p: 0.13
+        - ages:
+            begin: 65
+            end: 75
+          p: 0.21
+        - ages:
+            begin: 75
+            end: 0
+          p: 0.18
+---
+conditions:
+    diagnosis: hyp
+# Derived from the Health Survey for England 2019, Adult health table 2
+byage:
+    f:
+        - ages:
+            begin: 16
+            end: 25
+          p: 0.01
+        - ages:
+            begin: 25
+            end: 35
+          p: 0.06
+        - ages:
+            begin: 35
+            end: 45
+          p: 0.09
+        - ages:
+            begin: 45
+            end: 55
+          p: 0.22
+        - ages:
+            begin: 55
+            end: 65
+          p: 0.33
+        - ages:
+            begin: 65
+            end: 75
+          p: 0.51
+        - ages:
+            begin: 75
+            end: 0
+          p: 0.65
+    m:
+        - ages:
+            begin: 16
+            end: 25
+          p: 0.09
+        - ages:
+            begin: 25
+            end: 35
+          p: 0.08
+        - ages:
+            begin: 35
+            end: 45
+          p: 0.13
+        - ages:
+            begin: 45
+            end: 55
+          p: 0.29
+        - ages:
+            begin: 55
+            end: 65
+          p: 0.48
+        - ages:
+            begin: 65
+            end: 75
+          p: 0.58
+        - ages:
+            begin: 75
+            end: 0
+          p: 0.68
+---
+conditions:
+    diagnosis: copd
+# Derived from Public Health England's COPD prevalence model for small
+# populations, quoting data from Nacul et al
+# https://fingertips.phe.org.uk/documents/COPD-prevalence-model-Technical-Document-v1.2-0fc%20(1).docx
+byage:
+    f:
+        - ages:
+            begin: 15
+            end: 45
+          p: 0.0089
+        - ages:
+            begin: 45
+            end: 55
+          p: 0.02
+        - ages:
+            begin: 55
+            end: 65
+          p: 0.0411
+        - ages:
+            begin: 65
+            end: 75
+          p: 0.0481
+        - ages:
+            begin: 75
+            end: 0
+          p: 0.0555
+    m:
+        - ages:
+            begin: 15
+            end: 45
+          p: 0.013
+        - ages:
+            begin: 45
+            end: 55
+          p: 0.0238
+        - ages:
+            begin: 55
+            end: 65
+          p: 0.069
+        - ages:
+            begin: 65
+            end: 75
+          p: 0.1003
+        - ages:
+            begin: 75
+            end: 0
+          p: 0.1165
+---
+conditions:
+    diagnosis: dm,hyp
+# Comorbidity prevalence derived from https://multimorbidity.caliberresearch.org/CFA
+# Prevalences are not broken down by sex, so we use the same values for both.
+byage:
+    f:
+        - ages:
+            begin: 20
+            end: 29
+          p: 0.0005143
+        - ages:
+            begin: 30
+            end: 39
+          p: 0.00384745
+        - ages:
+            begin: 40
+            end: 49
+          p: 0.01889034
+        - ages:
+            begin: 50
+            end: 59
+          p: 0.0535188
+        - ages:
+            begin: 60
+            end: 69
+          p: 0.10156242
+        - ages:
+            begin: 70
+            end: 79
+          p: 0.16385307
+        - ages:
+            begin: 80
+            end: 0
+          p: 0.15076283
+    m:
+        - ages:
+            begin: 20
+            end: 29
+          p: 0.0005143
+        - ages:
+            begin: 30
+            end: 39
+          p: 0.00384745
+        - ages:
+            begin: 40
+            end: 49
+          p: 0.01889034
+        - ages:
+            begin: 50
+            end: 59
+          p: 0.0535188
+        - ages:
+            begin: 60
+            end: 69
+          p: 0.10156242
+        - ages:
+            begin: 70
+            end: 79
+          p: 0.16385307
+        - ages:
+            begin: 80
+            end: 0
+          p: 0.15076283
+---
+conditions:
+    diagnosis: hyp,copd
+# Comorbidity prevalence derived from https://multimorbidity.caliberresearch.org/CFA
+# Prevalences are not broken down by sex, so we use the same values for both.
+byage:
+    f:
+        - ages:
+            begin: 30
+            end: 39
+          p: 0.00050494
+        - ages:
+            begin: 40
+            end: 49
+          p: 0.00336516
+        - ages:
+            begin: 50
+            end: 59
+          p: 0.01561707
+        - ages:
+            begin: 60
+            end: 69
+          p: 0.04829698
+        - ages:
+            begin: 70
+            end: 0
+          p: 0.09684548
+    m:
+        - ages:
+            begin: 30
+            end: 39
+          p: 0.00050494
+        - ages:
+            begin: 40
+            end: 49
+          p: 0.00336516
+        - ages:
+            begin: 50
+            end: 59
+          p: 0.01561707
+        - ages:
+            begin: 60
+            end: 69
+          p: 0.04829698
+        - ages:
+            begin: 70
+            end: 0
+          p: 0.09684548
+---
+conditions:
+    diagnosis: dm,copd
+# Comorbidity prevalence derived from https://multimorbidity.caliberresearch.org/CFA
+# Prevalences are not broken down by sex, so we use the same values for both.
+byage:
+    f:
+        - ages:
+            begin: 30
+            end: 39
+          p: 0.00020673
+        - ages:
+            begin: 40
+            end: 49
+          p: 0.00136145
+        - ages:
+            begin: 50
+            end: 59
+          p: 0.00573859
+        - ages:
+            begin: 60
+            end: 69
+          p: 0.01612181
+        - ages:
+            begin: 70
+            end: 0
+          p: 0.03162693
+    m:
+        - ages:
+            begin: 30
+            end: 39
+          p: 0.00020673
+        - ages:
+            begin: 40
+            end: 49
+          p: 0.00136145
+        - ages:
+            begin: 50
+            end: 59
+          p: 0.00573859
+        - ages:
+            begin: 60
+            end: 69
+          p: 0.01612181
+        - ages:
+            begin: 70
+            end: 0
+          p: 0.03162693
