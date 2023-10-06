@@ -19,6 +19,7 @@ require (
 	google.golang.org/genproto v0.0.0-20230403163135-c38d8f061ccd // indirect
 	google.golang.org/grpc v1.54.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace diagonal.works/b6 v0.0.4 => ../../../deps/diagonal-b6/src/diagonal.works/b6
