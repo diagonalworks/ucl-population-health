@@ -68,161 +68,247 @@ func (a AgePrevalences) Log() {
 	}
 }
 
+type Diagonsis struct {
+	Present QOFConditions
+	Absent  QOFConditions
+}
+
+func (d Diagonsis) String() string {
+	s := ""
+	first := true
+	for _, c := range AllQOFConditions() {
+		if d.Present.Contains(c) {
+			if !first {
+				s += ","
+			}
+			s += c.String()
+			first = false
+		} else if d.Absent.Contains(c) {
+			if !first {
+				s += ","
+			}
+			s += "!" + c.String()
+			first = false
+		}
+	}
+	return s
+}
+
+type DiagonosisGiven struct {
+	Diagonsis Diagonsis
+	Given     Diagonsis
+}
+
+func (d DiagonosisGiven) String() string {
+	return fmt.Sprintf("%s|%s", d.Diagonsis, d.Given)
+}
+
+func OneCondition(c QOFCondition) DiagonosisGiven {
+	var d DiagonosisGiven
+	d.Diagonsis.Present.Add(c)
+	return d
+}
+
+func TwoConditions(c1 QOFCondition, c2 QOFCondition) DiagonosisGiven {
+	var d DiagonosisGiven
+	d.Diagonsis.Present.Add(c1)
+	d.Diagonsis.Present.Add(c2)
+	return d
+}
+
+func OneConditionGivenOtherPresent(c1 QOFCondition, c2 QOFCondition) DiagonosisGiven {
+	var d DiagonosisGiven
+	d.Diagonsis.Present.Add(c1)
+	d.Given.Present.Add(c2)
+	return d
+}
+
+func OneConditionGivenOtherAbsent(c1 QOFCondition, c2 QOFCondition) DiagonosisGiven {
+	var d DiagonosisGiven
+	d.Diagonsis.Present.Add(c1)
+	d.Given.Absent.Add(c2)
+	return d
+}
+
+type Prevalences struct {
+	Conditions DiagonosisGiven
+	ByAge      AgePrevalences
+}
+
+func (p Prevalences) Prevalence(sex Sex, age int) float64 {
+	return p.ByAge.Prevalence(sex, age)
+}
+
+func (p Prevalences) Log() {
+	log.Println(p.Conditions.String())
+	p.ByAge.Log()
+}
+
 // Copied from Health Survey for England 2019, Adult health table 2
-var DiabetesPrevalence = AgePrevalences{
+var DiabetesPrevalence = Prevalences{
+	Conditions: OneCondition(QOFConditionDiabetes),
 	// Male
-	{
-		{AgeRange: AgeRange{Begin: 16, End: 25}, Prevalence: 1.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 25, End: 35}, Prevalence: 1.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 35, End: 45}, Prevalence: 3.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 9.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 13.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 21.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 75}, Prevalence: 18.0 / 100.0},
-	},
-	// Female
-	{
-		{AgeRange: AgeRange{Begin: 16, End: 25}, Prevalence: 0.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 25, End: 35}, Prevalence: 1.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 35, End: 45}, Prevalence: 3.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 4.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 9.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 15.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 75}, Prevalence: 6.0 / 100.0},
+	ByAge: [][]AgePrevalence{
+		[]AgePrevalence{
+			// Male
+			{AgeRange: AgeRange{Begin: 16, End: 25}, Prevalence: 1.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 25, End: 35}, Prevalence: 1.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 35, End: 45}, Prevalence: 3.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 9.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 13.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 21.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 75}, Prevalence: 18.0 / 100.0},
+		},
+		[]AgePrevalence{
+			// Female
+			{AgeRange: AgeRange{Begin: 16, End: 25}, Prevalence: 0.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 25, End: 35}, Prevalence: 1.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 35, End: 45}, Prevalence: 3.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 4.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 9.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 15.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 75}, Prevalence: 6.0 / 100.0},
+		},
 	},
 }
 
 // Copied from Health Survey for England 2019, Adult health table 2
-var HypertensionPrevalence = AgePrevalences{
-	// Male
-	{
-		{AgeRange: AgeRange{Begin: 16, End: 25}, Prevalence: 9.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 25, End: 35}, Prevalence: 8.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 35, End: 45}, Prevalence: 13.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 29.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 48.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 58.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 75}, Prevalence: 68.0 / 100.0},
-	},
-	// Female
-	{
-		{AgeRange: AgeRange{Begin: 16, End: 25}, Prevalence: 1.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 25, End: 35}, Prevalence: 6.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 35, End: 45}, Prevalence: 9.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 22.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 33.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 51.0 / 100.0},
-		{AgeRange: AgeRange{Begin: 75}, Prevalence: 65.0 / 100.0},
+var HypertensionPrevalence = Prevalences{
+	Conditions: OneCondition(QOFConditionHypertension),
+	ByAge: [][]AgePrevalence{
+		[]AgePrevalence{
+			// Male
+			{AgeRange: AgeRange{Begin: 16, End: 25}, Prevalence: 9.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 25, End: 35}, Prevalence: 8.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 35, End: 45}, Prevalence: 13.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 29.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 48.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 58.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 75}, Prevalence: 68.0 / 100.0},
+		},
+		[]AgePrevalence{
+			// Female
+			{AgeRange: AgeRange{Begin: 16, End: 25}, Prevalence: 1.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 25, End: 35}, Prevalence: 6.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 35, End: 45}, Prevalence: 9.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 22.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 33.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 51.0 / 100.0},
+			{AgeRange: AgeRange{Begin: 75}, Prevalence: 65.0 / 100.0},
+		},
 	},
 }
 
 // Copied from PHE's COPD prevalence model for small populations, quoting
 // data from Nacul et al
 // https://fingertips.phe.org.uk/documents/COPD-prevalence-model-Technical-Document-v1.2-0fc%20(1).docx
-var COPDPrevalence = AgePrevalences{
-	// Male
-	{
-		{AgeRange: AgeRange{Begin: 15, End: 45}, Prevalence: 1.30 / 100.0},
-		{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 2.38 / 100.0},
-		{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 6.90 / 100.0},
-		{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 10.03 / 100.0},
-		{AgeRange: AgeRange{Begin: 75}, Prevalence: 11.65 / 100.0},
+var COPDPrevalence = Prevalences{
+	Conditions: OneCondition(QOFConditionCOPD),
+	ByAge: [][]AgePrevalence{
+		// Male
+		[]AgePrevalence{
+			{AgeRange: AgeRange{Begin: 15, End: 45}, Prevalence: 1.30 / 100.0},
+			{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 2.38 / 100.0},
+			{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 6.90 / 100.0},
+			{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 10.03 / 100.0},
+			{AgeRange: AgeRange{Begin: 75}, Prevalence: 11.65 / 100.0},
+		},
+		// Female
+		[]AgePrevalence{
+			{AgeRange: AgeRange{Begin: 15, End: 45}, Prevalence: 0.89 / 100.0},
+			{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 2.00 / 100.0},
+			{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 4.11 / 100.0},
+			{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 4.81 / 100.0},
+			{AgeRange: AgeRange{Begin: 75}, Prevalence: 5.55 / 100.0},
+		},
 	},
-	// Female
-	{
-		{AgeRange: AgeRange{Begin: 15, End: 45}, Prevalence: 0.89 / 100.0},
-		{AgeRange: AgeRange{Begin: 45, End: 55}, Prevalence: 2.00 / 100.0},
-		{AgeRange: AgeRange{Begin: 55, End: 65}, Prevalence: 4.11 / 100.0},
-		{AgeRange: AgeRange{Begin: 65, End: 75}, Prevalence: 4.81 / 100.0},
-		{AgeRange: AgeRange{Begin: 75}, Prevalence: 5.55 / 100.0},
-	},
-}
-
-type Prevalences map[QOFCondition]AgePrevalences
-
-var AllPrevalences = Prevalences{
-	QOFConditionDiabetes:     DiabetesPrevalence,
-	QOFConditionCOPD:         COPDPrevalence,
-	QOFConditionHypertension: HypertensionPrevalence,
 }
 
 // Comorbidities are from https://multimorbidity.caliberresearch.org/CFA
-var HypertensionAndCOPDPrevalence = AgePrevalences{
+var HypertensionAndCOPDPrevalence = Prevalences{
+	Conditions: TwoConditions(QOFConditionHypertension, QOFConditionCOPD),
 	// Data isn't broken down by sex in the interactive tool, so we duplicate
 	// the average data here. The breakdown is available in their CSVs, though
 	// is also broken down by race, so we'd have to standardise it.
-	{
-		{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.050494 / 100.0},
-		{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 0.336516 / 100.0},
-		{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 1.561707 / 100.0},
-		{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 4.829698 / 100.0},
-		{AgeRange: AgeRange{Begin: 70}, Prevalence: 9.684548 / 100.0},
-	},
-	{
-		{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.050494 / 100.0},
-		{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 0.336516 / 100.0},
-		{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 1.561707 / 100.0},
-		{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 4.829698 / 100.0},
-		{AgeRange: AgeRange{Begin: 70}, Prevalence: 9.684548 / 100.0},
-	},
-}
-
-var DiabetesAndCOPDPrevalence = AgePrevalences{
-	{
-		{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.020673 / 100.0},
-		{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 0.136145 / 100.0},
-		{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 0.573859 / 100.0},
-		{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 1.612181 / 100.0},
-		{AgeRange: AgeRange{Begin: 70}, Prevalence: 3.162693 / 100.0},
-	},
-	{
-		{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.020673 / 100.0},
-		{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 0.136145 / 100.0},
-		{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 0.573859 / 100.0},
-		{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 1.612181 / 100.0},
-		{AgeRange: AgeRange{Begin: 70}, Prevalence: 3.162693 / 100.0},
+	ByAge: [][]AgePrevalence{
+		[]AgePrevalence{
+			// Male
+			{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.050494 / 100.0},
+			{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 0.336516 / 100.0},
+			{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 1.561707 / 100.0},
+			{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 4.829698 / 100.0},
+			{AgeRange: AgeRange{Begin: 70}, Prevalence: 9.684548 / 100.0},
+		},
+		[]AgePrevalence{
+			// Female
+			{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.050494 / 100.0},
+			{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 0.336516 / 100.0},
+			{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 1.561707 / 100.0},
+			{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 4.829698 / 100.0},
+			{AgeRange: AgeRange{Begin: 70}, Prevalence: 9.684548 / 100.0},
+		},
 	},
 }
 
-var DiabetesAndHypertensionPrevalence = AgePrevalences{
-	{
-		{AgeRange: AgeRange{Begin: 20, End: 29}, Prevalence: 0.051430 / 100.0},
-		{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.384745 / 100.0},
-		{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 1.889034 / 100.0},
-		{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 5.351880 / 100.0},
-		{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 10.156242 / 100.0},
-		{AgeRange: AgeRange{Begin: 70, End: 79}, Prevalence: 16.385307 / 100.0},
-		{AgeRange: AgeRange{Begin: 80}, Prevalence: 15.076283 / 100.0},
+var DiabetesAndCOPDPrevalence = Prevalences{
+	Conditions: TwoConditions(QOFConditionDiabetes, QOFConditionCOPD),
+	ByAge: [][]AgePrevalence{
+		[]AgePrevalence{
+			// Male
+			{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.020673 / 100.0},
+			{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 0.136145 / 100.0},
+			{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 0.573859 / 100.0},
+			{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 1.612181 / 100.0},
+			{AgeRange: AgeRange{Begin: 70}, Prevalence: 3.162693 / 100.0},
+		},
+		[]AgePrevalence{
+			// Female
+			{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.020673 / 100.0},
+			{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 0.136145 / 100.0},
+			{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 0.573859 / 100.0},
+			{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 1.612181 / 100.0},
+			{AgeRange: AgeRange{Begin: 70}, Prevalence: 3.162693 / 100.0},
+		},
 	},
-	{
-		{AgeRange: AgeRange{Begin: 20, End: 29}, Prevalence: 0.051430 / 100.0},
-		{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.384745 / 100.0},
-		{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 1.889034 / 100.0},
-		{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 5.351880 / 100.0},
-		{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 10.156242 / 100.0},
-		{AgeRange: AgeRange{Begin: 70, End: 79}, Prevalence: 16.385307 / 100.0},
-		{AgeRange: AgeRange{Begin: 80}, Prevalence: 15.076283 / 100.0},
+}
+
+var DiabetesAndHypertensionPrevalence = Prevalences{
+	Conditions: TwoConditions(QOFConditionDiabetes, QOFConditionHypertension),
+	ByAge: [][]AgePrevalence{
+		[]AgePrevalence{
+			// Male
+			{AgeRange: AgeRange{Begin: 20, End: 29}, Prevalence: 0.051430 / 100.0},
+			{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.384745 / 100.0},
+			{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 1.889034 / 100.0},
+			{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 5.351880 / 100.0},
+			{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 10.156242 / 100.0},
+			{AgeRange: AgeRange{Begin: 70, End: 79}, Prevalence: 16.385307 / 100.0},
+			{AgeRange: AgeRange{Begin: 80}, Prevalence: 15.076283 / 100.0},
+		},
+		[]AgePrevalence{
+			// Female
+			{AgeRange: AgeRange{Begin: 20, End: 29}, Prevalence: 0.051430 / 100.0},
+			{AgeRange: AgeRange{Begin: 30, End: 39}, Prevalence: 0.384745 / 100.0},
+			{AgeRange: AgeRange{Begin: 40, End: 49}, Prevalence: 1.889034 / 100.0},
+			{AgeRange: AgeRange{Begin: 50, End: 59}, Prevalence: 5.351880 / 100.0},
+			{AgeRange: AgeRange{Begin: 60, End: 69}, Prevalence: 10.156242 / 100.0},
+			{AgeRange: AgeRange{Begin: 70, End: 79}, Prevalence: 16.385307 / 100.0},
+			{AgeRange: AgeRange{Begin: 80}, Prevalence: 15.076283 / 100.0},
+		},
 	},
 }
 
-type Comorbidities map[[2]QOFCondition]AgePrevalences
+type AllPrevalences map[DiagonosisGiven]Prevalences
 
-var AllComorbidities = Comorbidities{
-	{QOFConditionHypertension, QOFConditionCOPD}:     HypertensionAndCOPDPrevalence,
-	{QOFConditionDiabetes, QOFConditionCOPD}:         DiabetesAndCOPDPrevalence,
-	{QOFConditionDiabetes, QOFConditionHypertension}: DiabetesAndHypertensionPrevalence,
+var allPrevalences = AllPrevalences{
+	DiabetesPrevalence.Conditions:     DiabetesPrevalence,
+	HypertensionPrevalence.Conditions: HypertensionPrevalence,
+	COPDPrevalence.Conditions:         COPDPrevalence,
 
-	{QOFConditionCOPD, QOFConditionHypertension}:     HypertensionAndCOPDPrevalence,
-	{QOFConditionCOPD, QOFConditionDiabetes}:         DiabetesAndCOPDPrevalence,
-	{QOFConditionHypertension, QOFConditionDiabetes}: DiabetesAndHypertensionPrevalence,
+	HypertensionAndCOPDPrevalence.Conditions:     HypertensionAndCOPDPrevalence,
+	DiabetesAndCOPDPrevalence.Conditions:         DiabetesAndCOPDPrevalence,
+	DiabetesAndHypertensionPrevalence.Conditions: DiabetesAndHypertensionPrevalence,
 }
-
-type JointCondition struct {
-	Conditions    [2]QOFCondition
-	SecondPresent bool
-}
-
-type JointPrevalences map[JointCondition]AgePrevalences
 
 // Incredibly rough, and wrong, estimates for the average
 // number of appointments by age. Derived in a hacky spreadsheet from
@@ -377,16 +463,44 @@ const (
 	GPPracticeStatusProposed GPPracticeStatus = "P"
 )
 
-type QOFCondition int
+type QOFCondition uint32
 
 const (
-	QOFConditionDiabetes QOFCondition = iota
-	QOFConditionHypertension
-	QOFConditionCOPD
+	QOFConditionDiabetes     QOFCondition = 1 << 0
+	QOFConditionHypertension              = 1 << 1
+	QOFConditionCOPD                      = 1 << 2
 
-	QOFConditionLast                 = QOFConditionCOPD
-	QOFConditionInvalid QOFCondition = -1
+	QOFConditionLast = QOFConditionCOPD
+
+	QOFConditionBegin = QOFConditionDiabetes
+	QOFConditionEnd   = QOFConditionLast << 1
+
+	QOFConditionInvalid QOFCondition = 0
 )
+
+func AllQOFConditions() []QOFCondition {
+	conditions := make([]QOFCondition, 0, 1)
+	for i := QOFConditionBegin; i != QOFConditionEnd; i <<= 1 {
+		conditions = append(conditions, i)
+	}
+	return conditions
+}
+
+type QOFConditions uint32
+
+func (c QOFConditions) Contains(condition QOFCondition) bool {
+	return c&QOFConditions(condition) != 0
+}
+
+func (c *QOFConditions) Add(condition QOFCondition) {
+	*c |= QOFConditions(condition)
+}
+
+func (c QOFConditions) ToUint32() uint32 {
+	return uint32(c)
+}
+
+const QOFConditionsMaxUint32 = QOFConditionEnd - 1
 
 func (q QOFCondition) String() string {
 	switch q {
@@ -499,13 +613,13 @@ type GPPractice struct {
 	Location            s2.Point
 	LSOA                LSOACode
 	ListSize            int
-	ConditionPrevalence [QOFConditionLast + 1]float64
-	ConditionBias       [QOFConditionLast + 1]float64
+	ConditionPrevalence map[QOFCondition]float64
+	ConditionBias       map[QOFCondition]float64
 	Appointments        int
 	AppointmentsByType  [HcpTypeLast + 1]int
 
 	SimulatedListSize        int
-	SimulatedConditionCounts [QOFConditionLast + 1]int
+	SimulatedConditionCounts map[QOFCondition]int
 }
 
 func readICBs() (map[ICBCode]*ICB, error) {
@@ -985,13 +1099,16 @@ func readGPPractices(w b6.World) (map[GPPracticeCode]*GPPractice, error) {
 		}
 		code := GPPracticeCode(row[GPPracticeDataCodeColumn])
 		gps[code] = &GPPractice{
-			Code:     code,
-			Name:     row[GPPracticeDataNameColumn],
-			ICB:      ICBCode(row[GPPracticeDataICBCodeColumn]),
-			Status:   GPPracticeStatus(row[GPPracticeDataStatusColumn]),
-			Postcode: postcode,
-			Location: location,
-			LSOA:     lsoa,
+			Code:                     code,
+			Name:                     row[GPPracticeDataNameColumn],
+			ICB:                      ICBCode(row[GPPracticeDataICBCodeColumn]),
+			Status:                   GPPracticeStatus(row[GPPracticeDataStatusColumn]),
+			Postcode:                 postcode,
+			Location:                 location,
+			LSOA:                     lsoa,
+			ConditionPrevalence:      make(map[QOFCondition]float64),
+			ConditionBias:            make(map[QOFCondition]float64),
+			SimulatedConditionCounts: make(map[QOFCondition]int),
 		}
 	}
 	log.Printf("practices: %d", len(gps))
@@ -1179,6 +1296,10 @@ func (s Sex) String() string {
 	return "o"
 }
 
+func Sexes() []Sex {
+	return []Sex{Male, Female}
+}
+
 func sum(xs []int) int {
 	s := 0
 	for _, x := range xs {
@@ -1272,7 +1393,7 @@ type Person struct {
 	Age        int
 	Home       LSOACode
 	GP         GPPracticeCode
-	Conditions [QOFConditionLast + 1]bool
+	Conditions QOFConditions
 }
 
 func PersonHeaderRow() []string {
@@ -1286,17 +1407,18 @@ func presentToString(present bool) string {
 	return "0"
 }
 
-func (p *Person) ToRow() []string {
-	return []string{
+func (p *Person) ToRow(conditions []QOFCondition) []string {
+	row := []string{
 		strconv.Itoa(p.ID),
 		p.Sex.String(),
 		strconv.Itoa(p.Age),
 		p.Home.String(),
 		p.GP.String(),
-		presentToString(p.Conditions[QOFConditionDiabetes]),
-		presentToString(p.Conditions[QOFConditionHypertension]),
-		presentToString(p.Conditions[QOFConditionCOPD]),
 	}
+	for _, c := range conditions {
+		row = append(row, presentToString(p.Conditions.Contains(c)))
+	}
+	return row
 }
 
 const (
@@ -1382,35 +1504,55 @@ func estimateListSizeError(selected GPPracticeCodeSet, gps map[GPPracticeCode]*G
 	return math.Sqrt(x / n)
 }
 
-// Return the prevalences for c1|c2 and c1|!c2
-func buildJointPrevalence(c1 AgePrevalences, c2 AgePrevalences, c1c2 AgePrevalences, population []Person) (AgePrevalences, AgePrevalences) {
-	givenC2 := make(AgePrevalences, len(c1c2))
-	givenNotC2 := make(AgePrevalences, len(c1c2))
-	for _, sex := range []Sex{Male, Female} {
-		for _, a := range c1c2[sex] {
+// Add estimates for c1|c2 and c1|!c2 to prevalences, using Bayes based on
+// existing entries in prevalences for c1, c2 and c1&c2.
+func fillConditionalPrevalences(c1 QOFCondition, c2 QOFCondition, population []Person, prevalences AllPrevalences) {
+	c1p, ok := prevalences[OneCondition(c1)]
+	if !ok {
+		panic(fmt.Sprintf("no prevalences for %s", OneCondition(c1)))
+	}
+	c2p, ok := prevalences[OneCondition(c2)]
+	if !ok {
+		panic(fmt.Sprintf("no prevalences for %s", OneCondition(c2)))
+	}
+	c1c2p, ok := prevalences[TwoConditions(c1, c2)]
+	if !ok {
+		panic(fmt.Sprintf("no prevalences for %s", TwoConditions(c1, c2)))
+	}
+	givenC2Present := Prevalences{
+		Conditions: OneConditionGivenOtherPresent(c1, c2),
+		ByAge:      make([][]AgePrevalence, len(Sexes())),
+	}
+	givenC2Absent := Prevalences{
+		Conditions: OneConditionGivenOtherAbsent(c1, c2),
+		ByAge:      make([][]AgePrevalence, len(Sexes())),
+	}
+	for _, sex := range Sexes() {
+		for _, a := range c1c2p.ByAge[sex] {
 			ec1 := 0.0
 			ec2 := 0.0
 			n := 0.0
 			for _, person := range population {
 				if person.Sex == sex && a.AgeRange.Contains(person.Age) {
 					n += 1.0
-					ec1 += c1.Prevalence(person.Sex, person.Age)
-					ec2 += c2.Prevalence(person.Sex, person.Age)
+					ec1 += c1p.Prevalence(person.Sex, person.Age)
+					ec2 += c2p.Prevalence(person.Sex, person.Age)
 				}
 			}
 			pc1 := ec1 / n
 			pc2 := ec2 / n
 			pc1c2 := math.Min(math.Min(a.Prevalence, pc1), pc2)
 			p := pc1c2 / pc2
-			givenC2[sex] = append(givenC2[sex], AgePrevalence{AgeRange: a.AgeRange, Prevalence: p})
+			givenC2Present.ByAge[sex] = append(givenC2Present.ByAge[sex], AgePrevalence{AgeRange: a.AgeRange, Prevalence: p})
 			p = (pc1 - pc1c2) / (1.0 - pc2)
-			givenNotC2[sex] = append(givenNotC2[sex], AgePrevalence{AgeRange: a.AgeRange, Prevalence: p})
+			givenC2Absent.ByAge[sex] = append(givenC2Absent.ByAge[sex], AgePrevalence{AgeRange: a.AgeRange, Prevalence: p})
 		}
 	}
-	return givenC2, givenNotC2
+	prevalences[givenC2Present.Conditions] = givenC2Present
+	prevalences[givenC2Absent.Conditions] = givenC2Absent
 }
 
-func estimateGPPracticeConditionBias(population map[GPPracticeCode][]*Person, condition QOFCondition, prevalence AgePrevalences, gps map[GPPracticeCode]*GPPractice) {
+func estimateGPPracticeConditionBias(population map[GPPracticeCode][]*Person, condition QOFCondition, prevalence Prevalences, gps map[GPPracticeCode]*GPPractice) {
 	for code, people := range population {
 		gp := gps[code]
 		gp.ConditionBias[condition] = 1.0
@@ -1426,7 +1568,7 @@ func estimateGPPracticeConditionBias(population map[GPPracticeCode][]*Person, co
 	}
 }
 
-func assignConditions(population map[GPPracticeCode][]*Person, conditions []QOFCondition, prevalences Prevalences, joint JointPrevalences, gps map[GPPracticeCode]*GPPractice) {
+func assignConditions(population map[GPPracticeCode][]*Person, conditions []QOFCondition, prevalences AllPrevalences, gps map[GPPracticeCode]*GPPractice) {
 	shuffled := make([]QOFCondition, len(conditions))
 	for i, condition := range conditions {
 		shuffled[i] = condition
@@ -1438,17 +1580,26 @@ func assignConditions(population map[GPPracticeCode][]*Person, conditions []QOFC
 		gp := gps[code]
 		for _, p := range people {
 			rand.Shuffle(len(shuffled), swap)
-			p.Conditions[shuffled[0]] = rand.Float64() < (prevalences[shuffled[0]].Prevalence(p.Sex, p.Age) * gp.ConditionBias[shuffled[0]])
+			if rand.Float64() < (prevalences[OneCondition(shuffled[0])].Prevalence(p.Sex, p.Age) * gp.ConditionBias[shuffled[0]]) {
+				p.Conditions.Add(shuffled[0])
+			}
 			for i := 1; i < len(shuffled); i++ {
-				conditions := JointCondition{Conditions: [2]QOFCondition{shuffled[i], shuffled[i-1]}, SecondPresent: p.Conditions[shuffled[i-1]]}
-				if j, ok := joint[conditions]; ok {
-					p.Conditions[shuffled[i]] = rand.Float64() < (j.Prevalence(p.Sex, p.Age) * gp.ConditionBias[shuffled[i]])
+				var d DiagonosisGiven
+				if p.Conditions.Contains(shuffled[i-1]) {
+					d = OneConditionGivenOtherPresent(shuffled[i], shuffled[i-1])
 				} else {
-					panic(fmt.Sprintf("no joint probabilities for %+v", conditions))
+					d = OneConditionGivenOtherAbsent(shuffled[i], shuffled[i-1])
+				}
+				if conditional, ok := prevalences[d]; ok {
+					if rand.Float64() < (conditional.Prevalence(p.Sex, p.Age) * gp.ConditionBias[shuffled[i]]) {
+						p.Conditions.Add(shuffled[i])
+					}
+				} else {
+					panic(fmt.Sprintf("no conditional prevalences for %s", d))
 				}
 			}
 			for _, condition := range conditions {
-				if p.Conditions[condition] {
+				if p.Conditions.Contains(condition) {
 					gp.SimulatedConditionCounts[condition]++
 				}
 			}
@@ -1740,37 +1891,23 @@ type PopulationJSON struct {
 	AppointmentsByAgeThenConditionCount [][]float64
 }
 
-// Return an integer representaton of the conditions present for
-// the given person, setting bits for condiitons in the order
-// passed.
-func conditionsToInt(p *Person, conditions []QOFCondition) int {
-	i := 0
-	for j, condition := range conditions {
-		if p.Conditions[condition] {
-			i |= (1 << j)
-		}
-	}
-	return i
-}
-
-func toJSON(conditions []QOFCondition, people []Person, lsoas map[LSOACode]*LSOA, msoas map[MSOACode]*MSOA, gps map[GPPracticeCode]*GPPractice) *PopulationJSON {
+func toJSON(people []Person, lsoas map[LSOACode]*LSOA, msoas map[MSOACode]*MSOA, gps map[GPPracticeCode]*GPPractice) *PopulationJSON {
 	const maxAge = 100
-	n := 1 << len(conditions)
 	output := &PopulationJSON{
-		Conditions:         make([]string, len(conditions)),
-		ByAgeThenCondition: aggregateByAgeThenCondition(people, maxAge, conditions, gps),
+		Conditions:         make([]string, len(AllQOFConditions())),
+		ByAgeThenCondition: aggregateByAgeThenCondition(people, maxAge, gps),
 	}
-	all := BreakdownJSON{Key: "all", ByValue: []CountJSON{{Value: "all", Counts: make([]int, n)}}}
+	all := BreakdownJSON{Key: "all", ByValue: []CountJSON{{Value: "all", Counts: make([]int, QOFConditionsMaxUint32+1)}}}
 	byMSOA := make(map[MSOACode]*CountJSON)
 	byAge := make(CountJSONs, maxAge/10)
 	for i := range byAge {
 		byAge[i].Value = fmt.Sprintf("%d", i*10)
-		byAge[i].Counts = make([]int, n)
+		byAge[i].Counts = make([]int, QOFConditionsMaxUint32+1)
 	}
 	byIMDDecile := make(CountJSONs, 10)
 	for i := range byIMDDecile {
 		byIMDDecile[i].Value = fmt.Sprintf("%d", i+1)
-		byIMDDecile[i].Counts = make([]int, n)
+		byIMDDecile[i].Counts = make([]int, QOFConditionsMaxUint32+1)
 	}
 	byIMDDecile[0].Value = "1 (most deprived 10%)"
 	byIMDDecile[9].Value = "10 (least deprived 10%)"
@@ -1781,27 +1918,26 @@ func toJSON(conditions []QOFCondition, people []Person, lsoas map[LSOACode]*LSOA
 			continue
 		}
 		icbPeopleByGP[p.GP]++
-		c := conditionsToInt(&p, conditions)
-		all.ByValue[0].Counts[c]++
+		all.ByValue[0].Counts[p.Conditions.ToUint32()]++
 		if msoa, ok := msoas[lsoas[gps[p.GP].LSOA].MSOACode]; ok {
 			b, ok := byMSOA[msoa.Code]
 			if !ok {
-				b = &CountJSON{Value: msoa.Name, Counts: make([]int, n)}
+				b = &CountJSON{Value: msoa.Name, Counts: make([]int, QOFConditionsMaxUint32+1)}
 				byMSOA[msoa.Code] = b
 			}
-			b.Counts[c]++
+			b.Counts[p.Conditions.ToUint32()]++
 		} else {
 			skippedNoMSOA++
 		}
 		if a := p.Age / 10; a < len(byAge) {
-			byAge[a].Counts[c]++
+			byAge[a].Counts[p.Conditions.ToUint32()]++
 		} else {
-			byAge[len(byAge)-1].Counts[c]++
+			byAge[len(byAge)-1].Counts[p.Conditions.ToUint32()]++
 		}
-		byIMDDecile[lsoas[p.Home].IMDDecile-1].Counts[c]++
+		byIMDDecile[lsoas[p.Home].IMDDecile-1].Counts[p.Conditions.ToUint32()]++
 	}
 	log.Printf("skipped: no msoa: %d", skippedNoMSOA)
-	for i, condition := range conditions {
+	for i, condition := range AllQOFConditions() {
 		output.Conditions[i] = condition.String()
 	}
 	output.Breakdowns = append(output.Breakdowns, all)
@@ -1875,21 +2011,19 @@ func medianAge(people []*Person) int {
 	return 0
 }
 
-func aggregateByAgeThenCondition(people []Person, maxAge int, conditions []QOFCondition, gps map[GPPracticeCode]*GPPractice) [][]int {
-	n := 1 << len(conditions)
+func aggregateByAgeThenCondition(people []Person, maxAge int, gps map[GPPracticeCode]*GPPractice) [][]int {
 	ageThenCondition := make([][]int, maxAge)
 	for i := range ageThenCondition {
-		ageThenCondition[i] = make([]int, n)
+		ageThenCondition[i] = make([]int, QOFConditionsMaxUint32+1)
 	}
 	for _, p := range people {
 		if gps[p.GP].ICB != NorthCentralLondonICBCode {
 			continue
 		}
-		c := conditionsToInt(&p, conditions)
 		if p.Age < len(ageThenCondition) {
-			ageThenCondition[p.Age][c]++
+			ageThenCondition[p.Age][p.Conditions.ToUint32()]++
 		} else {
-			ageThenCondition[len(ageThenCondition)-1][c]++
+			ageThenCondition[len(ageThenCondition)-1][p.Conditions.ToUint32()]++
 		}
 	}
 	return ageThenCondition
@@ -2023,19 +2157,12 @@ func writePopulation(world b6.World) error {
 
 	log.Printf("list size rmsd: %f", estimateListSizeError(icbPractices, gps))
 
-	joint := make(JointPrevalences)
 	for _, condition := range conditions {
 		for _, other := range conditions {
 			if other != condition {
-				given, givenNot := buildJointPrevalence(AllPrevalences[condition], AllPrevalences[other], AllComorbidities[[2]QOFCondition{condition, other}], people)
-				log.Printf("p(%s|%s)", condition, other)
-				given.Log()
-				log.Printf("p(%s|!%s)", condition, other)
-				givenNot.Log()
-				j := JointCondition{Conditions: [2]QOFCondition{condition, other}, SecondPresent: true}
-				joint[j] = given
-				j = JointCondition{Conditions: [2]QOFCondition{condition, other}, SecondPresent: false}
-				joint[j] = givenNot
+				fillConditionalPrevalences(condition, other, people, allPrevalences)
+				allPrevalences[OneConditionGivenOtherPresent(condition, other)].Log()
+				allPrevalences[OneConditionGivenOtherAbsent(condition, other)].Log()
 			}
 		}
 	}
@@ -2049,11 +2176,11 @@ func writePopulation(world b6.World) error {
 	log.Printf("estimate bias:")
 	for _, condition := range conditions {
 		log.Printf("  %s", condition)
-		estimateGPPracticeConditionBias(byPractice, condition, AllPrevalences[condition], gps)
+		estimateGPPracticeConditionBias(byPractice, condition, allPrevalences[OneCondition(condition)], gps)
 	}
 
 	log.Printf("assign conditions")
-	assignConditions(byPractice, conditions, AllPrevalences, joint, gps)
+	assignConditions(byPractice, conditions, allPrevalences, gps)
 
 	log.Printf("write population")
 	f, err := os.OpenFile("output/population.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
@@ -2064,7 +2191,7 @@ func writePopulation(world b6.World) error {
 	w.Write(PersonHeaderRow())
 	for _, person := range people {
 		if _, ok := icb.LSOAs[person.Home]; ok {
-			w.Write(person.ToRow())
+			w.Write(person.ToRow(conditions))
 		}
 	}
 	w.Flush()
@@ -2123,11 +2250,11 @@ func writePopulation(world b6.World) error {
 	}
 	log.Printf("total simulated list size: %d", totalSimulatedListSize)
 
-	if err := writePopulationByAge(aggregateByAgeThenCondition(people, 100, conditions, gps), conditions); err != nil {
+	if err := writePopulationByAge(aggregateByAgeThenCondition(people, 100, gps), conditions); err != nil {
 		return err
 	}
 
-	output, err := json.Marshal(toJSON(conditions, people, lsoas, msoas, gps))
+	output, err := json.Marshal(toJSON(people, lsoas, msoas, gps))
 	if err != nil {
 		return err
 	}
