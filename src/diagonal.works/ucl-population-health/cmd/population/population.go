@@ -198,65 +198,6 @@ func (p Prevalences) Log() {
 
 type AllPrevalences map[DiagonosisGiven]Prevalences
 
-// Incredibly rough, and wrong, estimates for the average
-// number of appointments by age. Derived in a hacky spreadsheet from
-// the Health Survey England data, which only buckets appointments
-// into, 0, 1-2, or 3+ by estimating the average of the 3+ bucket assuming
-// a 1.5 average for the 1-2 bucket, given a national appointments/people
-// ratio of 4.75. To seed the visualisation only, rather than for any
-// actual analysis.
-var AppointmentsNoConditions = AgePrevalences{
-	{
-		{Ages: AgeRange{Begin: 0, End: 15}, Prevalence: 3.5},
-		{Ages: AgeRange{Begin: 16, End: 24}, Prevalence: 3.5},
-		{Ages: AgeRange{Begin: 25, End: 34}, Prevalence: 4.0},
-		{Ages: AgeRange{Begin: 35, End: 44}, Prevalence: 4.0},
-		{Ages: AgeRange{Begin: 45, End: 54}, Prevalence: 5.25},
-		{Ages: AgeRange{Begin: 55, End: 64}, Prevalence: 5.0},
-		{Ages: AgeRange{Begin: 65, End: 74}, Prevalence: 5.5},
-		{Ages: AgeRange{Begin: 75}, Prevalence: 6.0},
-	},
-}
-
-var AppointmentsOneCondition = AgePrevalences{
-	{
-		{Ages: AgeRange{Begin: 0, End: 15}, Prevalence: 6.0},
-		{Ages: AgeRange{Begin: 16, End: 24}, Prevalence: 6.0},
-		{Ages: AgeRange{Begin: 25, End: 34}, Prevalence: 7.0},
-		{Ages: AgeRange{Begin: 35, End: 44}, Prevalence: 6.5},
-		{Ages: AgeRange{Begin: 45, End: 54}, Prevalence: 9.0},
-		{Ages: AgeRange{Begin: 55, End: 64}, Prevalence: 8.5},
-		{Ages: AgeRange{Begin: 65, End: 74}, Prevalence: 9.5},
-		{Ages: AgeRange{Begin: 75}, Prevalence: 10.0},
-	},
-}
-
-var AppointmentsTwoConditions = AgePrevalences{
-	{
-		{Ages: AgeRange{Begin: 0, End: 15}, Prevalence: 12.0},
-		{Ages: AgeRange{Begin: 16, End: 24}, Prevalence: 12.0},
-		{Ages: AgeRange{Begin: 25, End: 34}, Prevalence: 13.5},
-		{Ages: AgeRange{Begin: 35, End: 44}, Prevalence: 13.0},
-		{Ages: AgeRange{Begin: 45, End: 54}, Prevalence: 18.5},
-		{Ages: AgeRange{Begin: 55, End: 64}, Prevalence: 17.0},
-		{Ages: AgeRange{Begin: 65, End: 74}, Prevalence: 19.0},
-		{Ages: AgeRange{Begin: 75}, Prevalence: 20.5},
-	},
-}
-
-var AppointmentsThreeConditions = AgePrevalences{
-	{
-		{Ages: AgeRange{Begin: 0, End: 15}, Prevalence: 12.0},
-		{Ages: AgeRange{Begin: 16, End: 24}, Prevalence: 12.0},
-		{Ages: AgeRange{Begin: 25, End: 34}, Prevalence: 13.5},
-		{Ages: AgeRange{Begin: 35, End: 44}, Prevalence: 13.0},
-		{Ages: AgeRange{Begin: 45, End: 54}, Prevalence: 18.5},
-		{Ages: AgeRange{Begin: 55, End: 64}, Prevalence: 17.0},
-		{Ages: AgeRange{Begin: 65, End: 74}, Prevalence: 19.0},
-		{Ages: AgeRange{Begin: 75}, Prevalence: 20.5},
-	},
-}
-
 type ICBCode string
 
 func (i ICBCode) String() string {
@@ -1779,13 +1720,11 @@ type BreakdownJSON struct {
 type Breakdowns []BreakdownJSON
 
 type PopulationJSON struct {
-	TotalListSize                       int
-	TotalSimulatedListSize              int
-	TotalSimulatedAppointments          int
-	Conditions                          []string
-	Breakdowns                          Breakdowns
-	ByAgeThenCondition                  [][]int
-	AppointmentsByAgeThenConditionCount [][]float64
+	TotalListSize          int
+	TotalSimulatedListSize int
+	Conditions             []string
+	Breakdowns             Breakdowns
+	ByAgeThenCondition     [][]int
 }
 
 func toJSON(people []Person, lsoas map[LSOACode]*LSOA, msoas map[MSOACode]*MSOA, gps map[GPPracticeCode]*GPPractice) *PopulationJSON {
@@ -1856,24 +1795,12 @@ func toJSON(people []Person, lsoas map[LSOACode]*LSOA, msoas map[MSOACode]*MSOA,
 		ByValue: byIMDDecile,
 	})
 
-	appointments := make([][]float64, maxAge)
-	for age := range appointments {
-		appointments[age] = []float64{
-			AppointmentsNoConditions.Prevalence(Arbitrary, age),
-			AppointmentsOneCondition.Prevalence(Arbitrary, age),
-			AppointmentsTwoConditions.Prevalence(Arbitrary, age),
-			AppointmentsThreeConditions.Prevalence(Arbitrary, age),
-		}
-	}
-	output.AppointmentsByAgeThenConditionCount = appointments
-
 	for _, gp := range gps {
 		if gp.ICB != NorthCentralLondonICBCode {
 			continue
 		}
 		output.TotalListSize += gp.ListSize
 		output.TotalSimulatedListSize += gp.SimulatedListSize
-		output.TotalSimulatedAppointments += int((float64(gp.Appointments) * float64(gp.SimulatedListSize)) / float64(icbPeopleByGP[gp.Code]))
 	}
 
 	return output
