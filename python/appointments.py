@@ -111,8 +111,8 @@ def train_step_distribution(ages, conditions, expected, buckets, model, optimize
     optimizer.apply_gradients(zip(g, model.trainable_variables))
     return distribution_loss
 
-def conditions_from_row(row):
-    return [1.0 if row["condition_"+ c] == "1" else -1.0 for c in CONDITIONS]
+def conditions_from_row(row, condition_columns):
+    return [1.0 if row[column] == "1" else -1.0 for column in condition_columns]
 
 def fit(population_csv, gps_csv, output_directory):
     by_gp = {}
@@ -209,37 +209,34 @@ def predict(population_csv, output_directory):
     model = tf.keras.models.load_model(os.path.join(output_directory, "appointments-model"))
     model.compile()
     with open(population_csv) as f:
-        r = csv.DictReader(f)
-        ages = []
+        r = csv.reader(f)
+        population_headers = next(r)
+        condition_columns = [population_headers.index(f"condition_{c}") for c in CONDITIONS]
+        age_column = population_headers.index("age")
+        population = []
         conditions = []
         for row in r:
-            ages.append(int(row["age"]))
-            conditions.append(conditions_from_row(row))
+            population.append(row)
+            conditions.append(conditions_from_row(row, condition_columns))
 
     batch = 10000
-    appointments_summary = [0 for i in range(0, 110, 10)]
-    with open(os.path.join(output_directory, "appointments.csv"), "w") as f:
+    appointments_summary = [0 for i in range(0, 100, 10)]
+    with open(os.path.join(output_directory, "population-appointments.csv"), "w") as f:
         w = csv.writer(f)
-        headers = ["age"]
-        headers.extend(["condition_"+c for c in CONDITIONS])
-        headers.append("appointments")
-        w.writerow(headers)
+        w.writerow(population_headers + ["appointments"])
         bar = progressbar.ProgressBar()
-        for i in bar(range(0, len(ages), batch)):
-            ages_subset = ages[i:i+batch]
-            age_tensor = tf.constant(ages_subset)
+        for i in bar(range(0, len(population), batch)):
+            population_subset = population[i:i+batch]
+            age_tensor = tf.constant([int(row[age_column]) for row in population_subset])
             conditions_subset = conditions[i:i+batch]
             conditions_tensor = tf.constant(conditions_subset)
-            noise_tensor = tf.random.normal((len(ages_subset), NOISE))
+            noise_tensor = tf.random.normal((len(population_subset), NOISE))
             output = model([age_tensor, conditions_tensor, noise_tensor])
             output = (output * APPOINTMENT_VARIANCES) + APPOINTMENT_MEANS
             totals = tf.reduce_sum(output, axis=-1)
-            for age, cs, total in zip(ages_subset, conditions_subset, totals):
-                row = [str(age)]
-                row.extend(["1" if c > 0.0 else "0" for c in cs])
-                row.append(str(int(total)))
-                w.writerow(row)
-                appointments_summary[age%10] += float(total)
+            for (row, total) in zip(population_subset, totals):
+                w.writerow(row + [str(int(total))])
+                appointments_summary[int(row[age_column])//10] += float(total)
     for age, appointments in enumerate(appointments_summary):
         print(age, appointments)
 

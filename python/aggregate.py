@@ -25,7 +25,7 @@ APPOINTMENTS_UPPER_BOUND = 40
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--appointments", default="output/appointments.csv", help="The appointments to aggregate")
+    parser.add_argument("--appointments", default="output/population-appointments.csv", help="The appointments to aggregate")
     parser.add_argument("--output", default="output", help="Directory to write output files")
     flags = parser.parse_args()
 
