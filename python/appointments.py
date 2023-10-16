@@ -19,10 +19,9 @@
 import argparse
 import csv
 import numpy as np
-import random
-import progressbar
 import os.path
-
+import progressbar
+import random
 import tensorflow as tf
 
 # The diagnoses to take into account for an individual when modelling their
