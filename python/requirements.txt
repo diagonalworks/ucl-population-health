@@ -1,0 +1,5 @@
+numpy>=1.23.0
+progressbar>=2.5
+python-dp>=1.1.4
+tensorboard>=2.12.3
+tensorflow>=2.12.0
