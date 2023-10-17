@@ -73,6 +73,21 @@ GP_CONSULTATION_BUCKETS = 3
 APPOINTMENT_MEANS = tf.constant([1.0, 4.0, 16.0])
 APPOINTMENT_VARIANCES = tf.constant([1.0, 4.0, 32.0])
 
+def build_model(mean_age, var_age):
+    age_input = tf.keras.layers.Input(shape=(1,), name="age_input")
+    conditions_input = tf.keras.layers.Input(shape=(len(CONDITIONS),))
+    noise_input = tf.keras.layers.Input(shape=(NOISE,), name="noise_input")
+    age_normalised = tf.keras.layers.Normalization(axis=1, mean=mean_age, variance=var_age)(age_input)
+    concat = tf.keras.layers.Concatenate(axis=1)([age_normalised, conditions_input, noise_input])
+    dense1 = tf.keras.layers.Dense(8, activation="relu", name="dense1")(concat)
+    dense2 = tf.keras.layers.Dense(8, activation="relu", name="dense2")(dense1)
+    dense3 = tf.keras.layers.Dense(8, activation="relu", name="dense3")(dense2)
+    dense4 = tf.keras.layers.Dense(8, activation="relu", name="dense4")(dense3)
+    output = tf.keras.layers.Dense(3, activation="tanh")(dense4)
+    model = tf.keras.Model(inputs=[age_input, conditions_input, noise_input], outputs=[output], name="model")
+    model.compile()
+    return model
+
 # Run one training step, using a loss function that optimises for the
 # total number of appointments allocated to the batch, when compared to
 # the real values for the relevant GP practice.
@@ -117,13 +132,17 @@ def conditions_from_row(row, condition_columns):
 def fit(population_csv, gps_csv, output_directory):
     by_gp = {}
     with open(population_csv) as f:
-        r = csv.DictReader(f)
+        r = csv.reader(f)
+        population_headers = next(r)
+        condition_columns = [population_headers.index(f"condition_{c}") for c in CONDITIONS]
+        age_column = population_headers.index("age")
+        gp_column = population_headers.index("gp")
         ages = []
         for row in r:
-            ages.append(int(row["age"]))
-            values = by_gp.setdefault(row["gp"], [[], []])
-            values[0].append(int(row["age"]))
-            values[1].append(conditions_from_row(row))
+            ages.append(int(row[age_column]))
+            values = by_gp.setdefault(row[gp_column], [[], []])
+            values[0].append(int(row[age_column]))
+            values[1].append(conditions_from_row(row, condition_columns))
     mean_age = np.mean(ages)
     var_age = np.var(ages)
 
@@ -160,17 +179,7 @@ def fit(population_csv, gps_csv, output_directory):
                 appointments_per_batch = (a * BATCH_SIZE) / float(row["simulated_list_size"])
                 appointments[row["code"]] = appointments_per_batch
 
-    age_input = tf.keras.layers.Input(shape=(1,), name="age_input")
-    conditions_input = tf.keras.layers.Input(shape=(len(CONDITIONS),))
-    noise_input = tf.keras.layers.Input(shape=(NOISE,), name="noise_input")
-    age_normalised = tf.keras.layers.Normalization(axis=1, mean=mean_age, variance=var_age)(age_input)
-    concat = tf.keras.layers.Concatenate(axis=1)([age_normalised, conditions_input, noise_input])
-    dense1 = tf.keras.layers.Dense(8, activation="relu", name="dense1")(concat)
-    dense2 = tf.keras.layers.Dense(8, activation="relu", name="dense2")(dense1)
-    dense3 = tf.keras.layers.Dense(8, activation="relu", name="dense3")(dense2)
-    dense4 = tf.keras.layers.Dense(8, activation="relu", name="dense4")(dense3)
-    output = tf.keras.layers.Dense(3, activation="tanh")(dense4)
-    model = tf.keras.Model(inputs=[age_input, conditions_input, noise_input], outputs=[output], name="model")
+    model = build_model(mean_age, var_age)
     model.summary()
     optimizer = tf.keras.optimizers.Adam(1e-4)
     distribution_loss = tf.keras.metrics.Mean("distribution_loss", dtype=tf.float32)
