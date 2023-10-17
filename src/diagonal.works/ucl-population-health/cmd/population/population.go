@@ -12,6 +12,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -860,7 +861,7 @@ func readGPPracticeConditionPrevalence(gps map[GPPracticeCode]*GPPractice, condi
 }
 
 func imputeMissingPrevalenceFromNearby(gps map[GPPracticeCode]*GPPractice, conditions []QOFCondition, nearby map[LSOACode][]GPPracticeCode) {
-	log.Printf("imputeMissingPrevalenceFromNearby")
+	log.Printf("impute missing prevalences")
 	missing := 0
 	imputed := 0
 	for _, gp := range gps {
@@ -1445,7 +1446,7 @@ func assignConditions(population map[GPPracticeCode][]*Person, conditions []QOFC
 	}
 }
 
-func writeNearbyGPPractices(world b6.World) error {
+func writeNearbyGPPractices(world b6.World, cachedDirectory string) error {
 	log.Printf("build nearby GPs")
 
 	gps, err := readGPPractices(world)
@@ -1458,7 +1459,7 @@ func writeNearbyGPPractices(world b6.World) error {
 		return err
 	}
 
-	f, err := os.OpenFile("cached/nearby-gps.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := os.OpenFile(filepath.Join(cachedDirectory, "nearby-gps.csv"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -1474,9 +1475,9 @@ func writeNearbyGPPractices(world b6.World) error {
 	return f.Close()
 }
 
-func readNearbyGPPracticess() (map[LSOACode][]GPPracticeCode, error) {
+func readNearbyGPPracticess(cachedDirectory string) (map[LSOACode][]GPPracticeCode, error) {
 	log.Printf("read: nearby practices")
-	f, err := os.Open("cached/nearby-gps.csv")
+	f, err := os.Open(filepath.Join(cachedDirectory, "nearby-gps.csv"))
 	if err != nil {
 		return nil, err
 	}
@@ -1853,8 +1854,8 @@ func aggregateByAgeThenCondition(people []Person, maxAge int, gps map[GPPractice
 	return ageThenCondition
 }
 
-func writePopulationByAge(aggregated [][]int, conditions []QOFCondition) error {
-	f, err := os.OpenFile("output/population-byage.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+func writePopulationByAge(aggregated [][]int, conditions []QOFCondition, outputDirectory string) error {
+	f, err := os.OpenFile(filepath.Join(outputDirectory, "population-byage.csv"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -1890,7 +1891,7 @@ func writePopulationByAge(aggregated [][]int, conditions []QOFCondition) error {
 	return f.Close()
 }
 
-func writePopulation(world b6.World, allPrevalences AllPrevalences) error {
+func writePopulation(world b6.World, allPrevalences AllPrevalences, cachedDirectory string, outputDirectory string) error {
 	log.Printf("read:")
 	log.Printf("  icbs")
 	icbs, err := readICBs()
@@ -1923,7 +1924,7 @@ func writePopulation(world b6.World, allPrevalences AllPrevalences) error {
 	}
 
 	log.Printf("  nearby gp practices")
-	nearbyGPs, err := readNearbyGPPracticess()
+	nearbyGPs, err := readNearbyGPPracticess(cachedDirectory)
 	if err != nil {
 		return err
 	}
@@ -2007,7 +2008,7 @@ func writePopulation(world b6.World, allPrevalences AllPrevalences) error {
 	assignConditions(byPractice, conditions, allPrevalences, gps)
 
 	log.Printf("write population")
-	f, err := os.OpenFile("output/population.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := os.OpenFile(filepath.Join(outputDirectory, "population.csv"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -2022,7 +2023,7 @@ func writePopulation(world b6.World, allPrevalences AllPrevalences) error {
 	f.Close()
 
 	log.Printf("write gps")
-	f, err = os.OpenFile("output/gps.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err = os.OpenFile(filepath.Join(outputDirectory, "gps.csv"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -2074,7 +2075,7 @@ func writePopulation(world b6.World, allPrevalences AllPrevalences) error {
 	}
 	log.Printf("total simulated list size: %d", totalSimulatedListSize)
 
-	if err := writePopulationByAge(aggregateByAgeThenCondition(people, 100, gps), conditions); err != nil {
+	if err := writePopulationByAge(aggregateByAgeThenCondition(people, 100, gps), conditions, outputDirectory); err != nil {
 		return err
 	}
 
@@ -2082,7 +2083,7 @@ func writePopulation(world b6.World, allPrevalences AllPrevalences) error {
 	if err != nil {
 		return err
 	}
-	f, err = os.OpenFile("output/population.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err = os.OpenFile(filepath.Join(outputDirectory, "population.json"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -2113,10 +2114,12 @@ func readPrevalences() (AllPrevalences, error) {
 }
 
 func main() {
-	nearbyGPsFlag := flag.Bool("nearby-gps", false, "Write LSOA to GP mapping")
+	nearbyGPsFlag := flag.Bool("nearby-gps", false, "Write a mapping to LSOA to nearby GPs to --cached")
 	populationFlag := flag.Bool("population", false, "Write Population")
 	featuresFlag := flag.Bool("features", false, "Write a compact world containing healthcare features")
-	worldFlag := flag.String("world", "world/codepoint-open-2023-02.index,world/lsoa-2011.index", "Directory for temporary files, for --memory=false")
+	worldFlag := flag.String("world", "world/codepoint-open-2023-02.index,world/lsoa-2011.index", "b6 world to load for GP nearby GP generation")
+	cachedFlag := flag.String("cached", "cached", "Directory for intermediate files")
+	outputFlag := flag.String("output", "output", "Directory for output files")
 	flag.Parse()
 
 	allPrevalences, err := readPrevalences()
@@ -2130,7 +2133,7 @@ func main() {
 	}
 
 	if *nearbyGPsFlag {
-		if err := writeNearbyGPPractices(world); err != nil {
+		if err := writeNearbyGPPractices(world, *cachedFlag); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -2140,7 +2143,7 @@ func main() {
 		}
 	}
 	if *populationFlag {
-		if err := writePopulation(world, allPrevalences); err != nil {
+		if err := writePopulation(world, allPrevalences, *cachedFlag, *outputFlag); err != nil {
 			log.Fatal(err)
 		}
 	}
