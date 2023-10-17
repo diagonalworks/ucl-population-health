@@ -1854,43 +1854,6 @@ func aggregateByAgeThenCondition(people []Person, maxAge int, gps map[GPPractice
 	return ageThenCondition
 }
 
-func writePopulationByAge(aggregated [][]int, conditions []QOFCondition, outputDirectory string) error {
-	f, err := os.OpenFile(filepath.Join(outputDirectory, "population-byage.csv"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return err
-	}
-	headers := []string{"age"}
-	for i := 0; i < 1<<len(conditions); i++ {
-		parts := []string{}
-		for _, c := range conditions {
-			if i&(1<<c) != 0 {
-				parts = append(parts, c.String())
-			}
-		}
-		if len(parts) > 0 {
-			headers = append(headers, strings.Join(parts, "+"))
-		} else {
-			headers = append(headers, "none")
-		}
-	}
-	headers = append(headers, "total")
-
-	w := csv.NewWriter(f)
-	w.Write(headers)
-	for age, counts := range aggregated {
-		row := []string{strconv.Itoa(age)}
-		total := 0
-		for _, count := range counts {
-			row = append(row, strconv.Itoa(count))
-			total += count
-		}
-		row = append(row, strconv.Itoa(total))
-		w.Write(row)
-	}
-	w.Flush()
-	return f.Close()
-}
-
 func writePopulation(world b6.World, allPrevalences AllPrevalences, cachedDirectory string, outputDirectory string) error {
 	log.Printf("read:")
 	log.Printf("  icbs")
@@ -2074,10 +2037,6 @@ func writePopulation(world b6.World, allPrevalences AllPrevalences, cachedDirect
 		return err
 	}
 	log.Printf("total simulated list size: %d", totalSimulatedListSize)
-
-	if err := writePopulationByAge(aggregateByAgeThenCondition(people, 100, gps), conditions, outputDirectory); err != nil {
-		return err
-	}
 
 	output, err := json.Marshal(toJSON(people, lsoas, msoas, gps))
 	if err != nil {
