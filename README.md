@@ -25,7 +25,7 @@ docker run -v ${PWD}:/output europe-west1-docker.pkg.dev/diagonal-public/ucl-pop
 A number of files will be written to the current directory:
 - `population.csv` contains the synthetic individuals and their attributes.
 - `gps.csv` contains the GP practices, together with aggregate statistics for the synthetic individuals assigned to them.
-- `population.json` contains aggregate statistics got the synthetic individuals in a format suitable for web based visualisation.
+- `population.json` contains aggregate statistics of the synthetic individuals in a format suitable for web based visualisation.
 
 ### Building from source
 
